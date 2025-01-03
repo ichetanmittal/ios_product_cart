@@ -4,22 +4,39 @@ struct ProductCard: View {
     let product: Product
     let onFavorite: () -> Void
     
+    private var imageURL: URL? {
+        if let urlString = product.image?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !urlString.isEmpty {
+            let url = URL(string: urlString)
+            if url != nil {
+                debugPrint("DEBUG: Valid URL found for \(product.product_name): \(urlString)")
+            }
+            return url
+        }
+        debugPrint("DEBUG: No valid URL for \(product.product_name)")
+        return nil
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AsyncImage(url: URL(string: product.image ?? "")) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .failure:
-                    Image(systemName: "photo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                @unknown default:
-                    EmptyView()
+            ZStack {
+                if let url = imageURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            defaultProductImage
+                        @unknown default:
+                            defaultProductImage
+                        }
+                    }
+                } else {
+                    defaultProductImage
                 }
             }
             .frame(height: 200)
@@ -59,5 +76,17 @@ struct ProductCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(radius: 2)
+        .onAppear {
+            debugPrint("DEBUG: ProductCard appeared for \(product.product_name)")
+            if let originalString = product.image {
+                debugPrint("DEBUG: Original image string: \(originalString)")
+            }
+        }
+    }
+    
+    private var defaultProductImage: some View {
+        Image("swipe")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
     }
 }

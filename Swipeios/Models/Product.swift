@@ -12,6 +12,12 @@ struct Product: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case image, price, product_name, product_type, tax
     }
+    
+    // Custom identifier for persistence
+    var persistentId: String {
+        // Using product name as unique identifier since it appears unique in the API
+        return product_name
+    }
 }
 
 struct ProductResponse: Codable {
