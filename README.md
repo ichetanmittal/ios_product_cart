@@ -62,3 +62,4 @@ The app includes offline support through `LocalStorageManager`:
 - Products created while offline are stored locally
 - Favorites are persisted locally
 - Pending products are automatically synced when online
+.
