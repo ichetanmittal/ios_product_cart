@@ -11,7 +11,7 @@ import SwiftUI
 struct SwipeiosApp: App {
     var body: some Scene {
         WindowGroup {
-            ProductListView()
+            SplashScreenView()
         }
     }
 }
