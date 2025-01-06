@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class ProductViewModel: ObservableObject {
@@ -11,12 +12,50 @@ class ProductViewModel: ObservableObject {
     @Published var showFavoriteAlert = false
     @Published var showAddProductAlert = false
     @Published var alertMessage = ""
+    @Published var isOffline = false
     
     private let networkManager = NetworkManager.shared
+    private let storageManager = LocalStorageManager.shared
+    private let networkMonitor = NetworkMonitor.shared
+    private var cancellables = Set<AnyCancellable>()
     private let favoritesKey = "FavoriteProducts"
     
     init() {
         loadFavorites()
+        setupNetworkMonitoring()
+    }
+    
+    private func setupNetworkMonitoring() {
+        networkMonitor.$isConnected
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isConnected in
+                self?.isOffline = !isConnected
+                if isConnected {
+                    Task {
+                        await self?.syncPendingProducts()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func syncPendingProducts() async {
+        let pendingProducts = storageManager.getPendingProducts()
+        for (index, product) in pendingProducts.enumerated() {
+            do {
+                _ = try await networkManager.addProduct(
+                    name: product.name,
+                    type: product.type,
+                    price: product.price,
+                    tax: product.tax,
+                    imageData: product.imageData
+                )
+                storageManager.removePendingProduct(at: index)
+            } catch {
+                print("Failed to sync product: \(error.localizedDescription)")
+            }
+        }
+        await loadProducts()
     }
     
     private func loadFavorites() {
@@ -61,24 +100,43 @@ class ProductViewModel: ObservableObject {
     }
     
     func addProduct(name: String, type: String, price: Double, tax: Double, image: UIImage?) async -> Bool {
-        debugPrint("DEBUG: Adding new product - Name: \(name), Type: \(type), Price: \(price), Tax: \(tax)")
-        isLoading = true
-        do {
-            let imageData = image?.jpegData(compressionQuality: 0.8)
-            let response = try await networkManager.addProduct(name: name, type: type, price: price, tax: tax, imageData: imageData)
-            if response.success {
-                debugPrint("DEBUG: Product added successfully")
-                await loadProducts()
-                alertMessage = "Product added successfully!"
-                showAddProductAlert = true
-                return true
+        let imageData = image?.jpegData(compressionQuality: 0.8)
+        
+        if networkMonitor.isConnected {
+            // Online mode - add directly
+            isLoading = true
+            do {
+                let response = try await networkManager.addProduct(
+                    name: name,
+                    type: type,
+                    price: price,
+                    tax: tax,
+                    imageData: imageData
+                )
+                if response.success {
+                    await loadProducts()
+                    alertMessage = "Product added successfully!"
+                    showAddProductAlert = true
+                    return true
+                }
+                return false
+            } catch {
+                errorMessage = error.localizedDescription
+                return false
             }
-            debugPrint("DEBUG: Failed to add product")
-            return false
-        } catch {
-            errorMessage = error.localizedDescription
-            debugPrint("DEBUG: Error adding product: \(error.localizedDescription)")
-            return false
+        } else {
+            // Offline mode - save locally
+            let pendingProduct = LocalStorageManager.PendingProduct(
+                name: name,
+                type: type,
+                price: price,
+                tax: tax,
+                imageData: imageData
+            )
+            storageManager.savePendingProduct(pendingProduct)
+            alertMessage = "Product saved locally and will be synced when online"
+            showAddProductAlert = true
+            return true
         }
     }
     
@@ -100,28 +158,24 @@ class ProductViewModel: ObservableObject {
     }
     
     func filterProducts() {
-        debugPrint("DEBUG: Filtering products with search text: \(searchText)")
         if searchText.isEmpty {
             filteredProducts = sortProducts(products)
         } else {
             let filtered = products.filter { product in
-                product.product_name.lowercased().contains(searchText.lowercased()) ||
-                product.product_type.lowercased().contains(searchText.lowercased())
+                product.product_name.localizedCaseInsensitiveContains(searchText) ||
+                product.product_type.localizedCaseInsensitiveContains(searchText)
             }
             filteredProducts = sortProducts(filtered)
         }
-        debugPrint("DEBUG: Found \(filteredProducts.count) products after filtering")
     }
     
     private func sortProducts(_ products: [Product]) -> [Product] {
         debugPrint("DEBUG: Sorting products - Total count: \(products.count)")
-        let sorted = products.sorted { first, second in
+        return products.sorted { first, second in
             if first.isFavorite == second.isFavorite {
                 return first.product_name < second.product_name
             }
             return first.isFavorite && !second.isFavorite
         }
-        debugPrint("DEBUG: Sorting complete - Favorites at top")
-        return sorted
     }
 }

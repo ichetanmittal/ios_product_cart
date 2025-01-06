@@ -14,34 +14,48 @@ struct ProductListView: View {
                             print("DEBUG: Loading products...")
                         }
                 } else {
-                    ScrollView {
-                        GeometryReader { geometry in
-                            Color.clear.preference(key: ScrollOffsetPreferenceKey.self,
-                                value: geometry.frame(in: .named("scroll")).minY)
+                    VStack {
+                        if viewModel.isOffline {
+                            HStack {
+                                Image(systemName: "wifi.slash")
+                                Text("Offline Mode")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                            .background(Color.secondary.opacity(0.1))
+                            .cornerRadius(8)
                         }
-                        .frame(height: 0)
                         
-                        LazyVStack(spacing: 16) {
-                            ForEach(viewModel.filteredProducts) { product in
-                                ProductCard(product: product) {
-                                    viewModel.toggleFavorite(for: product)
-                                }
-                                .padding(.horizontal)
-                                .onAppear {
-                                    print("DEBUG: Loading product: \(product.product_name)")
+                        ScrollView {
+                            GeometryReader { geometry in
+                                Color.clear.preference(key: ScrollOffsetPreferenceKey.self,
+                                    value: geometry.frame(in: .named("scroll")).minY)
+                            }
+                            .frame(height: 0)
+                            
+                            LazyVStack(spacing: 16) {
+                                ForEach(viewModel.filteredProducts) { product in
+                                    ProductCard(product: product) {
+                                        viewModel.toggleFavorite(for: product)
+                                    }
+                                    .padding(.horizontal)
+                                    .onAppear {
+                                        print("DEBUG: Loading product: \(product.product_name)")
+                                    }
                                 }
                             }
+                            .padding(.vertical)
                         }
-                        .padding(.vertical)
-                    }
-                    .coordinateSpace(name: "scroll")
-                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                        scrollOffset = value
-                        print("DEBUG: Scroll offset: \(scrollOffset)")
-                    }
-                    .refreshable {
-                        print("DEBUG: Refreshing products...")
-                        await viewModel.loadProducts()
+                        .coordinateSpace(name: "scroll")
+                        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                            scrollOffset = value
+                            print("DEBUG: Scroll offset: \(scrollOffset)")
+                        }
+                        .refreshable {
+                            print("DEBUG: Refreshing products...")
+                            await viewModel.loadProducts()
+                        }
                     }
                 }
             }
