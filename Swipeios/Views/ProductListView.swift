@@ -1,14 +1,8 @@
 import SwiftUI
 
-/// Main view for displaying the list of products
 struct ProductListView: View {
-    /// View model containing the business logic
     @StateObject private var viewModel = ProductViewModel()
-    
-    /// Controls the presentation of the add product sheet
     @State private var showingAddProduct = false
-    
-    /// Tracks the scroll offset for potential future use (e.g., pull to refresh)
     @State private var scrollOffset: CGFloat = 0
     
     var body: some View {
@@ -21,7 +15,6 @@ struct ProductListView: View {
                         }
                 } else {
                     VStack {
-                        // Offline mode indicator
                         if viewModel.isOffline {
                             HStack {
                                 Image(systemName: "wifi.slash")
@@ -35,14 +28,12 @@ struct ProductListView: View {
                         }
                         
                         ScrollView {
-                            // Geometry reader for scroll tracking
                             GeometryReader { geometry in
                                 Color.clear.preference(key: ScrollOffsetPreferenceKey.self,
                                     value: geometry.frame(in: .named("scroll")).minY)
                             }
                             .frame(height: 0)
                             
-                            // Product list
                             LazyVStack(spacing: 16) {
                                 ForEach(viewModel.filteredProducts) { product in
                                     ProductCard(product: product) {
@@ -86,7 +77,6 @@ struct ProductListView: View {
             .sheet(isPresented: $showingAddProduct) {
                 AddProductView(viewModel: viewModel)
             }
-            // Error alert
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
                     viewModel.errorMessage = nil
@@ -94,7 +84,6 @@ struct ProductListView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
-            // Favorite action alert
             .alert("Success", isPresented: $viewModel.showFavoriteAlert) {
                 Button("OK") {
                     viewModel.showFavoriteAlert = false
@@ -102,7 +91,6 @@ struct ProductListView: View {
             } message: {
                 Text(viewModel.alertMessage)
             }
-            // Add product success alert
             .alert("Success", isPresented: $viewModel.showAddProductAlert) {
                 Button("OK") {
                     viewModel.showAddProductAlert = false
@@ -118,7 +106,6 @@ struct ProductListView: View {
     }
 }
 
-/// Preference key for tracking scroll offset
 struct ScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
