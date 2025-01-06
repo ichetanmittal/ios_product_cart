@@ -1,18 +1,36 @@
-import Foundation
-import SwiftUI
-import Combine
-
+/// ViewModel responsible for managing product-related operations and state
 @MainActor
 class ProductViewModel: ObservableObject {
+    // MARK: - Published Properties
+    
+    /// List of all products fetched from the API
     @Published var products: [Product] = []
+    
+    /// Filtered list of products based on search text and favorites
     @Published var filteredProducts: [Product] = []
+    
+    /// Loading state indicator
     @Published var isLoading = false
+    
+    /// Current search text for filtering products
     @Published var searchText = ""
+    
+    /// Error message to display to the user
     @Published var errorMessage: String?
+    
+    /// Alert control for favorite action
     @Published var showFavoriteAlert = false
+    
+    /// Alert control for add product action
     @Published var showAddProductAlert = false
+    
+    /// Message to display in alerts
     @Published var alertMessage = ""
+    
+    /// Indicates if the device is currently offline
     @Published var isOffline = false
+    
+    // MARK: - Private Properties
     
     private let networkManager = NetworkManager.shared
     private let storageManager = LocalStorageManager.shared
@@ -20,11 +38,13 @@ class ProductViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let favoritesKey = "FavoriteProducts"
     
+    /// Initializes the view model and sets up network monitoring
     init() {
         loadFavorites()
         setupNetworkMonitoring()
     }
     
+    /// Sets up network monitoring to handle connectivity changes
     private func setupNetworkMonitoring() {
         networkMonitor.$isConnected
             .receive(on: DispatchQueue.main)
@@ -39,6 +59,7 @@ class ProductViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
+    /// Syncs pending products when the device comes online
     private func syncPendingProducts() async {
         let pendingProducts = storageManager.getPendingProducts()
         for (index, product) in pendingProducts.enumerated() {
@@ -58,6 +79,7 @@ class ProductViewModel: ObservableObject {
         await loadProducts()
     }
     
+    /// Loads favorite products from user defaults
     private func loadFavorites() {
         debugPrint("DEBUG: Loading favorites from UserDefaults")
         let favorites = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
@@ -72,6 +94,7 @@ class ProductViewModel: ObservableObject {
         filteredProducts = sortProducts(products)
     }
     
+    /// Saves favorite products to user defaults
     private func saveFavorites() {
         debugPrint("DEBUG: Saving favorites to UserDefaults")
         let favorites = products.filter { $0.isFavorite }.map { $0.persistentId }
@@ -79,6 +102,7 @@ class ProductViewModel: ObservableObject {
         debugPrint("DEBUG: Saved \(favorites.count) favorites")
     }
     
+    /// Loads products from the API
     func loadProducts() async {
         debugPrint("DEBUG: Starting to load products...")
         isLoading = true
@@ -99,6 +123,7 @@ class ProductViewModel: ObservableObject {
         isLoading = false
     }
     
+    /// Adds a new product to the API or saves it locally if offline
     func addProduct(name: String, type: String, price: Double, tax: Double, image: UIImage?) async -> Bool {
         let imageData = image?.jpegData(compressionQuality: 0.8)
         
@@ -140,6 +165,7 @@ class ProductViewModel: ObservableObject {
         }
     }
     
+    /// Toggles the favorite status of a product
     func toggleFavorite(for product: Product) {
         debugPrint("DEBUG: Toggling favorite for product: \(product.product_name)")
         if let index = products.firstIndex(where: { $0.persistentId == product.persistentId }) {
@@ -157,6 +183,7 @@ class ProductViewModel: ObservableObject {
         }
     }
     
+    /// Filters products based on search text
     func filterProducts() {
         if searchText.isEmpty {
             filteredProducts = sortProducts(products)
@@ -169,6 +196,7 @@ class ProductViewModel: ObservableObject {
         }
     }
     
+    /// Sorts products by favorite status and name
     private func sortProducts(_ products: [Product]) -> [Product] {
         debugPrint("DEBUG: Sorting products - Total count: \(products.count)")
         return products.sorted { first, second in

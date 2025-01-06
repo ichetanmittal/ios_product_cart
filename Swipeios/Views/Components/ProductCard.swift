@@ -1,8 +1,15 @@
 import SwiftUI
 
+/// Card view for displaying a single product
 struct ProductCard: View {
+    /// Product to display
     let product: Product
+    
+    /// Action to perform when favorite button is tapped
     let onFavorite: () -> Void
+    
+    /// Default image to use when product image is not available
+    private let defaultImage = UIImage(systemName: "photo")!
     
     private var imageURL: URL? {
         if let urlString = product.image?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -19,6 +26,7 @@ struct ProductCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Product Image
             ZStack {
                 if let url = imageURL {
                     AsyncImage(url: url) { phase in
@@ -30,19 +38,29 @@ struct ProductCard: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                         case .failure:
-                            defaultProductImage
+                            Image(uiImage: defaultImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .foregroundColor(.gray)
                         @unknown default:
-                            defaultProductImage
+                            Image(uiImage: defaultImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .foregroundColor(.gray)
                         }
                     }
                 } else {
-                    defaultProductImage
+                    Image(uiImage: defaultImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .foregroundColor(.gray)
                 }
             }
             .frame(height: 200)
             .clipped()
             .cornerRadius(8)
             
+            // Product Details
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(product.product_name)
@@ -82,11 +100,5 @@ struct ProductCard: View {
                 debugPrint("DEBUG: Original image string: \(originalString)")
             }
         }
-    }
-    
-    private var defaultProductImage: some View {
-        Image("swipe")
-            .resizable()
-            .aspectRatio(contentMode: .fill)
     }
 }
