@@ -1,0 +1,86 @@
+{
+	"info": {
+		"_postman_id": "b5e9b9e0-5b0a-4b0e-9b0a-5b0a4b0e9b0a",
+		"name": "Swipe iOS API",
+		"description": "Collection for testing Swipe iOS API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Products",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://app.getswipe.in/api/public/get",
+					"protocol": "https",
+					"host": [
+						"app",
+						"getswipe",
+						"in"
+					],
+					"path": [
+						"api",
+						"public",
+						"get"
+					]
+				},
+				"description": "Retrieve all products"
+			},
+			"response": []
+		},
+		{
+			"name": "Add Product",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "product_name",
+							"value": "Test Product",
+							"type": "text"
+						},
+						{
+							"key": "product_type",
+							"value": "Product",
+							"type": "text"
+						},
+						{
+							"key": "price",
+							"value": "99.99",
+							"type": "text"
+						},
+						{
+							"key": "tax",
+							"value": "18",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "https://app.getswipe.in/api/public/add",
+					"protocol": "https",
+					"host": [
+						"app",
+						"getswipe",
+						"in"
+					],
+					"path": [
+						"api",
+						"public",
+						"add"
+					]
+				},
+				"description": "Add a new product"
+			},
+			"response": []
+		}
+	]
+}
