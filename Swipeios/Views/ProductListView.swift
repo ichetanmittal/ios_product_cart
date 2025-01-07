@@ -11,6 +11,8 @@ struct ProductListView: View {
     @State private var scrollOffset: CGFloat = 0
     /// Controls the current view layout (grid/list)
     @State private var isGridView = true
+    /// Selected filter tab (all/favorites)
+    @State private var selectedTab = 0
     
     /// Grid layout configuration for two columns
     private let gridColumns = [
@@ -42,6 +44,13 @@ struct ProductListView: View {
                             .background(Color.secondary.opacity(0.1))
                             .cornerRadius(8)
                         }
+                        
+                        Picker("Filter", selection: $selectedTab) {
+                            Text("All").tag(0)
+                            Text("Favorites").tag(1)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding()
                         
                         ScrollView {
                             GeometryReader { geometry in
@@ -87,6 +96,12 @@ struct ProductListView: View {
             .onChange(of: viewModel.searchText) { _, newValue in
                 withAnimation {
                     print("DEBUG: Search text changed to: \(newValue)")
+                    viewModel.filterProducts()
+                }
+            }
+            .onChange(of: selectedTab) { _, newValue in
+                withAnimation {
+                    viewModel.showFavoritesOnly = newValue == 1
                     viewModel.filterProducts()
                 }
             }

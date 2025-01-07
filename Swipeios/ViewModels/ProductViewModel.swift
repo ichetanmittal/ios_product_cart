@@ -14,6 +14,8 @@ class ProductViewModel: ObservableObject {
     @Published var isLoading = false
     /// Current search text for filtering products
     @Published var searchText = ""
+    /// Flag to show only favorite products
+    @Published var showFavoritesOnly = false
     /// Error message to display to the user
     @Published var errorMessage: String?
     /// Flag to show favorite action alert
@@ -201,17 +203,25 @@ class ProductViewModel: ObservableObject {
         }
     }
     
-    /// Filters products based on the search text
+    /// Filters products based on search text and favorites filter
     func filterProducts() {
-        if searchText.isEmpty {
-            filteredProducts = sortProducts(products)
-        } else {
-            let filtered = products.filter { product in
+        var filtered = products
+        
+        // Apply search filter if there's search text
+        if !searchText.isEmpty {
+            filtered = filtered.filter { product in
                 product.product_name.localizedCaseInsensitiveContains(searchText) ||
                 product.product_type.localizedCaseInsensitiveContains(searchText)
             }
-            filteredProducts = sortProducts(filtered)
         }
+        
+        // Apply favorites filter if enabled
+        if showFavoritesOnly {
+            filtered = filtered.filter { $0.isFavorite }
+        }
+        
+        // Sort and update filtered products
+        filteredProducts = sortProducts(filtered)
     }
     
     /// Sorts products by favorite status and then by name
