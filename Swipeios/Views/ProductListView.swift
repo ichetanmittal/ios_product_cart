@@ -5,12 +5,14 @@ import SwiftUI
 struct ProductListView: View {
     /// View model managing the product data and business logic
     @StateObject private var viewModel = ProductViewModel()
+    /// Theme manager for handling app appearance
+    @StateObject private var themeManager = ThemeManager.shared
     /// State for controlling the add product sheet presentation
     @State private var showingAddProduct = false
     /// Tracks the scroll offset for implementing pull-to-refresh
     @State private var scrollOffset: CGFloat = 0
     /// Controls the current view layout (grid/list)
-    @State private var isGridView = true
+    @State private var isGridView = false
     /// Selected filter tab (all/favorites)
     @State private var selectedTab = 0
     
@@ -107,7 +109,12 @@ struct ProductListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    ViewToggleButton(isGridView: $isGridView)
+                    Button {
+                        themeManager.toggleTheme()
+                    } label: {
+                        Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .primary)
+                    }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -147,6 +154,7 @@ struct ProductListView: View {
             print("DEBUG: Initial products load")
             await viewModel.loadProducts()
         }
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
 }
 

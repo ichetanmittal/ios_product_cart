@@ -11,9 +11,12 @@ import SwiftUI
 /// Configures the app's window and initial view hierarchy
 @main
 struct SwipeiosApp: App {
+    @StateObject private var themeManager = ThemeManager.shared
+    
     var body: some Scene {
         WindowGroup {
             SplashScreenView()
+                .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
         }
     }
 }
