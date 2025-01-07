@@ -10,6 +10,28 @@ A SwiftUI-based iOS application for managing products with offline support.
 - Offline support for adding products
 - Beautiful UI with modern SwiftUI components
 
+## API Documentation
+
+The API documentation is available in multiple formats:
+
+1. **Online Documentation (Recommended)**:
+   - Visit [https://ichetanmittal.github.io/ios_product_cart](https://ichetanmittal.github.io/ios_product_cart) for interactive API documentation
+   - No setup required, always up to date
+
+2. **Local Development**:
+   ```bash
+   # Start the documentation server
+   ./serve-docs.sh
+   
+   # Visit http://localhost:8000/docs in your browser
+   ```
+
+3. **Raw Specification**:
+   - View [api-spec.yaml](./api-spec.yaml) for the OpenAPI specification
+   - Import [Swipe.postman_collection.json](./Swipe.postman_collection.json) into Postman for testing
+
+For detailed API information, see [API.md](./API.md).
+
 ## Requirements
 
 - Xcode 14.0 or later
@@ -62,4 +84,3 @@ The app includes offline support through `LocalStorageManager`:
 - Products created while offline are stored locally
 - Favorites are persisted locally
 - Pending products are automatically synced when online
-.
