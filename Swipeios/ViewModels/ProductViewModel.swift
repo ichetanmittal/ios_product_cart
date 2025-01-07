@@ -68,26 +68,32 @@ class ProductViewModel: ObservableObject {
         let pendingProducts = storageManager.getPendingProducts()
         for (index, product) in pendingProducts.enumerated() {
             do {
-                _ = try await networkManager.addProduct(
+                let response = try await networkManager.addProduct(
                     name: product.name,
                     type: product.type,
                     price: product.price,
                     tax: product.tax,
                     imageData: product.imageData
                 )
-                storageManager.removePendingProduct(at: index)
+                if response.success {
+                    // Add the new product to our existing list instead of reloading everything
+                    var newProduct = response.product_details
+                    newProduct.isFavorite = false
+                    await MainActor.run {
+                        products.append(newProduct)
+                        filterProducts()
+                    }
+                    storageManager.removePendingProduct(at: index)
+                }
             } catch {
                 print("Failed to sync product: \(error.localizedDescription)")
             }
         }
-        await loadProducts()
     }
     
     /// Loads favorite products from UserDefaults and updates the products array
     private func loadFavorites() {
-        debugPrint("DEBUG: Loading favorites from UserDefaults")
         let favorites = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
-        debugPrint("DEBUG: Found \(favorites.count) favorites")
         
         // Update products with saved favorites
         for (index, var product) in products.enumerated() {
@@ -100,15 +106,12 @@ class ProductViewModel: ObservableObject {
     
     /// Saves favorite products to UserDefaults
     private func saveFavorites() {
-        debugPrint("DEBUG: Saving favorites to UserDefaults")
         let favorites = products.filter { $0.isFavorite }.map { $0.persistentId }
         UserDefaults.standard.set(favorites, forKey: favoritesKey)
-        debugPrint("DEBUG: Saved \(favorites.count) favorites")
     }
     
     /// Loads products from the network and updates the products array
     func loadProducts() async {
-        debugPrint("DEBUG: Starting to load products...")
         isLoading = true
         do {
             products = try await networkManager.fetchProducts()
@@ -119,10 +122,8 @@ class ProductViewModel: ObservableObject {
                 products[index] = product
             }
             filteredProducts = sortProducts(products)
-            debugPrint("DEBUG: Successfully loaded \(products.count) products")
         } catch {
             errorMessage = error.localizedDescription
-            debugPrint("DEBUG: Error loading products: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -196,7 +197,6 @@ class ProductViewModel: ObservableObject {
     
     /// Toggles the favorite status of a product and updates the products array
     func toggleFavorite(for product: Product) {
-        debugPrint("DEBUG: Toggling favorite for product: \(product.product_name)")
         if let index = products.firstIndex(where: { $0.persistentId == product.persistentId }) {
             products[index].isFavorite.toggle()
             let isFavorite = products[index].isFavorite
@@ -207,8 +207,6 @@ class ProductViewModel: ObservableObject {
             
             alertMessage = isFavorite ? "Product marked as favorite!" : "Product removed from favorites"
             showFavoriteAlert = true
-            
-            debugPrint("DEBUG: Product \(product.product_name) is now \(isFavorite ? "favorited" : "unfavorited")")
         }
     }
     

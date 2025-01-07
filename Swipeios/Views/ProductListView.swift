@@ -28,11 +28,8 @@ struct ProductListView: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
-                if viewModel.isLoading {
+                if viewModel.isLoading && viewModel.products.isEmpty {
                     ProgressView()
-                        .onAppear {
-                            print("DEBUG: Loading products...")
-                        }
                 } else {
                     VStack(spacing: 0) {
                         if viewModel.isOffline {
@@ -84,10 +81,8 @@ struct ProductListView: View {
                         .coordinateSpace(name: "scroll")
                         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
                             scrollOffset = value
-                            print("DEBUG: Scroll offset: \(scrollOffset)")
                         }
                         .refreshable {
-                            print("DEBUG: Refreshing products...")
                             await viewModel.loadProducts()
                         }
                     }
@@ -97,7 +92,6 @@ struct ProductListView: View {
             .searchable(text: $viewModel.searchText)
             .onChange(of: viewModel.searchText) { _, newValue in
                 withAnimation {
-                    print("DEBUG: Search text changed to: \(newValue)")
                     viewModel.filterProducts()
                 }
             }
@@ -176,8 +170,10 @@ struct ProductListView: View {
             }
         }
         .task {
-            print("DEBUG: Initial products load")
-            await viewModel.loadProducts()
+            // Only load products if they haven't been loaded yet
+            if viewModel.products.isEmpty {
+                await viewModel.loadProducts()
+            }
         }
         .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
