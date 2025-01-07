@@ -13,73 +13,145 @@ struct AddProductView: View {
     @State private var imageSelection: PhotosPickerItem? = nil
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var isSaving = false
+    @FocusState private var focusedField: Field?
     
     private let productTypes = ["Product", "Service"]
     
+    private enum Field {
+        case productName, price, tax
+    }
+    
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Product Details")) {
-                    TextField("Product Name", text: $productName)
-                    
-                    Picker("Product Type", selection: $productType) {
-                        ForEach(productTypes, id: \.self) {
-                            Text($0)
-                        }
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        focusedField = nil
                     }
-                    
-                    TextField("Price", text: $price)
-                        .keyboardType(.decimalPad)
-                    
-                    TextField("Tax (%)", text: $tax)
-                        .keyboardType(.decimalPad)
-                }
                 
-                Section(header: Text("Product Image")) {
-                    if let image = selectedImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 200)
-                    }
-                    
-                    PhotosPicker(selection: $imageSelection,
-                               matching: .images) {
-                        HStack {
-                            Image(systemName: "photo")
-                            Text(selectedImage == nil ? "Add Image" : "Change Image")
-                        }
-                    }
-                    .onChange(of: imageSelection) { newValue in
-                        Task {
-                            if let data = try? await newValue?.loadTransferable(type: Data.self) {
-                                selectedImage = UIImage(data: data)
+                Form {
+                    Section {
+                        VStack(alignment: .center, spacing: 12) {
+                            if let image = selectedImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .shadow(radius: 3)
+                            }
+                            
+                            PhotosPicker(selection: $imageSelection,
+                                       matching: .images) {
+                                HStack {
+                                    Image(systemName: selectedImage == nil ? "photo.badge.plus" : "photo.badge.plus.fill")
+                                        .font(.system(size: 20))
+                                    Text(selectedImage == nil ? "Add Image" : "Change Image")
+                                        .font(.headline)
+                                }
+                                .foregroundColor(.blue)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
+                                .background(Color(.systemBackground))
+                                .clipShape(Capsule())
+                                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                            }
+                            .onChange(of: imageSelection) { newValue in
+                                Task {
+                                    if let data = try? await newValue?.loadTransferable(type: Data.self) {
+                                        if let image = UIImage(data: data) {
+                                            selectedImage = image
+                                        }
+                                    }
+                                }
                             }
                         }
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .listRowBackground(Color.clear)
+                    
+                    Section {
+                        VStack(alignment: .leading, spacing: 16) {
+                            TextField("Product Name", text: $productName)
+                                .focused($focusedField, equals: .productName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .font(.body)
+                            
+                            Picker("Product Type", selection: $productType) {
+                                ForEach(productTypes, id: \.self) {
+                                    Text($0)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            
+                            HStack(spacing: 16) {
+                                VStack(alignment: .leading) {
+                                    Text("Price")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    TextField("0.00", text: $price)
+                                        .focused($focusedField, equals: .price)
+                                        .keyboardType(.decimalPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                
+                                VStack(alignment: .leading) {
+                                    Text("Tax (%)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    TextField("0", text: $tax)
+                                        .focused($focusedField, equals: .tax)
+                                        .keyboardType(.decimalPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                            }
+                        }
+                        .padding(.vertical, 8)
                     }
                 }
-            }
-            .navigationTitle("Add Product")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+                .scrollDismissesKeyboard(.immediately)
+                .navigationTitle("Add Product")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .disabled(isSaving)
                     }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Save") {
+                            saveProduct()
+                        }
+                        .disabled(isSaving)
+                    }
+                }
+                .alert("Error", isPresented: $showingAlert) {
+                    Button("OK") { }
+                } message: {
+                    Text(alertMessage)
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveProduct()
-                    }
+                if isSaving {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .overlay(
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                Text("Saving product...")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                            }
+                        )
                 }
             }
-            .alert("Error", isPresented: $showingAlert) {
-                Button("OK") { }
-            } message: {
-                Text(alertMessage)
-            }
         }
+        .interactiveDismissDisabled(isSaving)
     }
     
     private func saveProduct() {
@@ -98,6 +170,9 @@ struct AddProductView: View {
             return
         }
         
+        isSaving = true
+        focusedField = nil // Dismiss keyboard when saving
+        
         Task {
             if await viewModel.addProduct(name: productName,
                                         type: productType,
@@ -108,6 +183,7 @@ struct AddProductView: View {
             } else {
                 showAlert(message: "Failed to add product")
             }
+            isSaving = false
         }
     }
     
