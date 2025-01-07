@@ -1,0 +1,142 @@
+openapi: 3.0.0
+info:
+  title: Swipe iOS App API
+  description: API specification for the Swipe iOS application
+  version: 1.0.0
+  contact:
+    name: Chetan Mittal
+
+servers:
+  - url: https://app.getswipe.in/api
+    description: Production server
+
+paths:
+  /public/get:
+    get:
+      summary: Get all products
+      description: Retrieves a list of all available products
+      operationId: getProducts
+      tags:
+        - Products
+      responses:
+        '200':
+          description: List of products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /public/add:
+    post:
+      summary: Add a new product
+      description: Creates a new product with the provided details
+      operationId: addProduct
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                product_name:
+                  type: string
+                  description: Name of the product
+                  example: "iPhone 13"
+                product_type:
+                  type: string
+                  description: Type of the product (Product/Service)
+                  example: "Product"
+                price:
+                  type: number
+                  format: double
+                  description: Price of the product
+                  example: 999.99
+                tax:
+                  type: number
+                  format: double
+                  description: Tax percentage for the product
+                  example: 18.0
+                image:
+                  type: string
+                  format: binary
+                  description: Product image file
+              required:
+                - product_name
+                - product_type
+                - price
+                - tax
+      responses:
+        '200':
+          description: Product added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the product
+        image:
+          type: string
+          nullable: true
+          description: URL of the product image
+        price:
+          type: number
+          format: double
+          description: Price of the product
+        product_name:
+          type: string
+          description: Name of the product
+        product_type:
+          type: string
+          description: Type of the product
+        tax:
+          type: number
+          format: double
+          description: Tax percentage for the product
+        isFavorite:
+          type: boolean
+          description: Whether the product is marked as favorite
+      required:
+        - product_name
+        - product_type
+        - price
+        - tax
+
+    ProductResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+        product_details:
+          $ref: '#/components/schemas/Product'
+        product_id:
+          type: integer
+          description: Server-assigned product ID
+        success:
+          type: boolean
+          description: Whether the operation was successful
+      required:
+        - message
+        - product_details
+        - product_id
+        - success
