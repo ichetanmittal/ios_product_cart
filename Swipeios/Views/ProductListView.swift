@@ -1,11 +1,18 @@
 import SwiftUI
 
+/// Main view for displaying the list of products
+/// Supports both grid and list layouts with offline capabilities and pull-to-refresh
 struct ProductListView: View {
+    /// View model managing the product data and business logic
     @StateObject private var viewModel = ProductViewModel()
+    /// State for controlling the add product sheet presentation
     @State private var showingAddProduct = false
+    /// Tracks the scroll offset for implementing pull-to-refresh
     @State private var scrollOffset: CGFloat = 0
+    /// Controls the current view layout (grid/list)
     @State private var isGridView = true
     
+    /// Grid layout configuration for two columns
     private let gridColumns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
@@ -128,6 +135,8 @@ struct ProductListView: View {
     }
 }
 
+/// Preference key for tracking scroll offset
+/// Used to implement pull-to-refresh functionality
 struct ScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {

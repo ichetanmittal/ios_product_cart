@@ -1,12 +1,18 @@
 import SwiftUI
 
+/// A view component that displays a product card with customizable layout options.
+/// Supports both grid and list view layouts with interactive elements like favorite button and tap animation.
 struct ProductCard: View {
+    /// The product model to display
     let product: Product
+    /// Callback closure triggered when the favorite button is tapped
     let onFavorite: () -> Void
+    /// Flag to determine if the card should be displayed in grid view
     let isGridView: Bool
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var isPressed = false
     
+    /// Computed property that safely creates a URL from the product's image string
     private var imageURL: URL? {
         if let urlString = product.image?.trimmingCharacters(in: .whitespacesAndNewlines),
            !urlString.isEmpty {
@@ -38,6 +44,8 @@ struct ProductCard: View {
         }
     }
     
+    /// Grid layout configuration for the product card
+    /// Displays the product image, favorite button, and product details in a vertical layout
     private var gridLayout: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {

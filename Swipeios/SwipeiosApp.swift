@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+/// Main entry point for the Swipeios application
+/// Configures the app's window and initial view hierarchy
 @main
 struct SwipeiosApp: App {
     var body: some Scene {

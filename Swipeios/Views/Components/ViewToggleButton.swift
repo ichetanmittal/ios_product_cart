@@ -1,6 +1,11 @@
 import SwiftUI
 
+/// A reusable button component that toggles between grid and list view layouts
+/// Provides visual feedback through animations and icon changes
 struct ViewToggleButton: View {
+    /// Binding to control the grid/list view state
+    /// - true: Grid view
+    /// - false: List view
     @Binding var isGridView: Bool
     
     var body: some View {
