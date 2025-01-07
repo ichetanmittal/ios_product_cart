@@ -26,6 +26,15 @@ class ProductViewModel: ObservableObject {
     @Published var alertMessage = ""
     /// Flag indicating offline status
     @Published var isOffline = false
+    /// Current sort order for price
+    @Published var priceSortOrder: PriceSortOrder = .none
+    
+    /// Enum to represent price sort order
+    enum PriceSortOrder {
+        case none
+        case lowToHigh
+        case highToLow
+    }
     
     private let networkManager = NetworkManager.shared
     private let storageManager = LocalStorageManager.shared
@@ -224,14 +233,32 @@ class ProductViewModel: ObservableObject {
         filteredProducts = sortProducts(filtered)
     }
     
-    /// Sorts products by favorite status and then by name
+    /// Sorts products based on current criteria
     private func sortProducts(_ products: [Product]) -> [Product] {
-        debugPrint("DEBUG: Sorting products - Total count: \(products.count)")
-        return products.sorted { first, second in
-            if first.isFavorite == second.isFavorite {
-                return first.product_name < second.product_name
+        var sortedProducts = products
+        
+        // First sort by price if price sort is active
+        switch priceSortOrder {
+        case .lowToHigh:
+            sortedProducts.sort { $0.price < $1.price }
+        case .highToLow:
+            sortedProducts.sort { $0.price > $1.price }
+        case .none:
+            // If no price sort, sort by favorites
+            sortedProducts.sort { product1, product2 in
+                if product1.isFavorite != product2.isFavorite {
+                    return product1.isFavorite
+                }
+                return product1.product_name < product2.product_name
             }
-            return first.isFavorite && !second.isFavorite
         }
+        
+        return sortedProducts
+    }
+    
+    /// Updates the sort order and refilters products
+    func updateSortOrder(_ order: PriceSortOrder) {
+        priceSortOrder = order
+        filterProducts()
     }
 }

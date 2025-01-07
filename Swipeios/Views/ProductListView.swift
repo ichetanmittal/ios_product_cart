@@ -109,6 +109,31 @@ struct ProductListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: {
+                            viewModel.updateSortOrder(.none)
+                        }) {
+                            Label("Default", systemImage: "arrow.up.arrow.down")
+                        }
+                        
+                        Button(action: {
+                            viewModel.updateSortOrder(.lowToHigh)
+                        }) {
+                            Label("Price: Low to High", systemImage: "arrow.up")
+                        }
+                        
+                        Button(action: {
+                            viewModel.updateSortOrder(.highToLow)
+                        }) {
+                            Label("Price: High to Low", systemImage: "arrow.down")
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .foregroundColor(.primary)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         themeManager.toggleTheme()
                     } label: {
