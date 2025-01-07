@@ -82,7 +82,7 @@ struct ProductListView: View {
                     }
                 }
             }
-            .navigationTitle("Products (\(viewModel.filteredProducts.count))")
+            .navigationTitle("Products")
             .searchable(text: $viewModel.searchText)
             .onChange(of: viewModel.searchText) { _, newValue in
                 withAnimation {

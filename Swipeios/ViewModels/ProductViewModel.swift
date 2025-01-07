@@ -122,7 +122,6 @@ class ProductViewModel: ObservableObject {
         
         if networkMonitor.isConnected {
             // Online mode - add directly
-            isLoading = true
             do {
                 let response = try await networkManager.addProduct(
                     name: name,
@@ -131,14 +130,24 @@ class ProductViewModel: ObservableObject {
                     tax: tax,
                     imageData: imageData
                 )
+                
                 if response.success {
-                    await loadProducts()
-                    alertMessage = "Product added successfully!"
-                    showAddProductAlert = true
+                    // Create a new product instance with the response data
+                    var newProduct = response.product_details
+                    newProduct.isFavorite = false // Initialize as not favorite
+                    
+                    // Update the products array
+                    await MainActor.run {
+                        products.append(newProduct)
+                        filterProducts() // Update filtered products
+                        alertMessage = "Product added successfully!"
+                        showAddProductAlert = true
+                    }
                     return true
                 }
                 return false
             } catch {
+                debugPrint("Failed to add product: \(error)")
                 errorMessage = error.localizedDescription
                 return false
             }
@@ -152,8 +161,24 @@ class ProductViewModel: ObservableObject {
                 imageData: imageData
             )
             storageManager.savePendingProduct(pendingProduct)
-            alertMessage = "Product saved locally and will be synced when online"
-            showAddProductAlert = true
+            
+            // Create a temporary product for immediate display
+            let tempProduct = Product(
+                image: nil,
+                price: price,
+                product_name: name,
+                product_type: type,
+                tax: tax,
+                isFavorite: false
+            )
+            
+            // Update the products array
+            await MainActor.run {
+                products.append(tempProduct)
+                filterProducts() // Update filtered products
+                alertMessage = "Product saved locally and will be synced when online"
+                showAddProductAlert = true
+            }
             return true
         }
     }
